@@ -10,10 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="957d7dab-8f82-4888-9758-8b9054e696b2" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/simplex.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simplex.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/simplex.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simplex.exe" beforeDir="false" afterPath="$PROJECT_DIR$/simplex.exe" afterDir="false" />
     </list>
@@ -81,7 +78,8 @@
       <workItem from="1701788775778" duration="3152000" />
       <workItem from="1701797111049" duration="7335000" />
       <workItem from="1701845122065" duration="24957000" />
-      <workItem from="1701923610136" duration="7609000" />
+      <workItem from="1701923610136" duration="12189000" />
+      <workItem from="1702016164390" duration="32453000" />
     </task>
     <servers />
   </component>
