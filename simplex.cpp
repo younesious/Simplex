@@ -97,18 +97,18 @@ void enter_simplex_table(vector<vector<double>> &simplexTable, const vector<doub
     size_t numRows = numConstraints + 1;
     size_t numCols = numVariables + 2;
 
-    simplexTable.resize(numRows, vector<double>(numCols, 0.0));
+    simplexTable.resize(numRows, vector<double>(numCols - 1, 0.0));
 
-    for (int i = 0; i < numVariables; ++i) {
+    for (int i = 0; i <= numVariables; ++i) {
         simplexTable[0][i] = -objectiveCoefficients[i];
     }
 
     for (size_t i = 1; i <= numConstraints; ++i) {
-        for (size_t j = 0; j < numVariables; ++j) {
+        for (size_t j = 0; j <= numVariables; ++j) {
             simplexTable[i][j] = constraintCoefficients[i - 1][j];
         }
         simplexTable[i][numVariables + i - 1] = 1.0; // Slack or artificial variable
-        simplexTable[i][numCols - 1] = constraintRHS[i - 1];
+        simplexTable[i][numCols - 2] = constraintRHS[i - 1];
     }
 }
 
@@ -127,11 +127,9 @@ void print_simplex(const vector<vector<double>> &simplexTable, int inputColumn, 
     cout << setw(15) << "R.H.S" << endl;
 
     cout << setw(10) << "Z |";
-    for (size_t i = 0; i < simplexTable[0].size(); ++i) {
-        if (i != simplexTable[0].size() - 2) {
-            double coefficient = (objectiveType == 2) ? -simplexTable[0][i] : simplexTable[0][i];
-            cout << setw(13) << fixed << setprecision(2) << coefficient;
-        }
+    for (double i: simplexTable[0]) {
+        double coefficient = (objectiveType == 2) ? -i : i;
+        cout << setw(13) << fixed << setprecision(2) << coefficient;
     }
     cout << endl;
 
@@ -141,18 +139,26 @@ void print_simplex(const vector<vector<double>> &simplexTable, int inputColumn, 
         } else {
             cout << setw(8) << basicVariables[i - 1] << " |";
         }
-        for (size_t j = 0; j < simplexTable[i].size(); ++j) {
-            if (j != simplexTable[i].size() - 2) {
-                cout << setw(13) << fixed << setprecision(2) << simplexTable[i][j];
-            }
+        for (double j: simplexTable[i]) {
+            cout << setw(13) << fixed << setprecision(2) << j;
         }
         cout << endl;
     }
 }
 
+void big_m_method(vector<double> &constraintRow, double constraintRHS, vector<double> &objectiveCoefficients, int M) {
+    objectiveCoefficients.push_back(M);
+
+    for (size_t j = 0; j <= constraintRow.size(); ++j) {
+        objectiveCoefficients[j] += -M * constraintRow[j];
+    }
+
+    objectiveCoefficients.emplace_back(-M * constraintRHS);
+}
+
 vector<string> select_basic_variables(vector<string> &variables, const vector<string> &constraintSigns,
                                       vector<vector<double>> &constraintCoefficients,
-                                      vector<double> &objectiveCoefficients) {
+                                      vector<double> &objectiveCoefficients, const vector<double> &constraintRHS) {
     vector<string> basicVariables;
     size_t nextVariableIndex = variables.size() + 1;
 
@@ -220,7 +226,18 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
             for (size_t j = 0; j < constraintCoefficients.size(); ++j) {
                 constraintCoefficients[j].push_back((j == i) ? 1.0 : 0.0);
             }
-            objectiveCoefficients.push_back(-100);
+
+            int method;
+            cout << "Enter '1' for BigM or '2' for Two-Phase method: ";
+            cin >> method;
+            if (method == 1) {
+                big_m_method(constraintCoefficients[i], constraintRHS[i], objectiveCoefficients, -100);
+            } else if (method == 2) {
+                // Call Two-Phase method
+            } else {
+                cerr << "Invalid input. Exiting program." << endl;
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
@@ -240,6 +257,7 @@ void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vec
             if (simplexTable[0][i] < simplexTable[0][inputColumn]) {
                 inputColumn = i;
             }
+
         }
 
         // Step 4: Select the output variable
@@ -294,6 +312,7 @@ void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vec
 
         // If the solution is optimal, break out of the loop
         if (optimal) {
+            cout << "\n\nhi there2\n";
             print_simplex(simplexTable, -1, -1, iteration_counter, basicVariables, variables, objectiveType);
             break;
         }
@@ -314,7 +333,8 @@ int main() {
               constraintCoefficients, constraintSigns, constraintRHS, variables);
 
     vector<string> basicVariables = select_basic_variables(variables, constraintSigns,
-                                                           constraintCoefficients, objectiveCoefficients);
+                                                           constraintCoefficients, objectiveCoefficients,
+                                                           constraintRHS);
 
     // Print the Linear Programming problem
     print_problem(objectiveType, objectiveCoefficients, constraintCoefficients,
