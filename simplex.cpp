@@ -2,8 +2,12 @@
 #include <vector>
 #include <string>
 #include <iomanip>
+#include <algorithm>
 
 using namespace std;
+
+vector<double> oldObjectiveCoefficients;
+static bool two_phase_flag = true;
 
 void min_to_max(vector<double> &objectiveCoefficients) {
     for (double &coeff: objectiveCoefficients) {
@@ -149,11 +153,32 @@ void print_simplex(const vector<vector<double>> &simplexTable, int inputColumn, 
 void big_m_method(vector<double> &constraintRow, double constraintRHS, vector<double> &objectiveCoefficients, int M) {
     objectiveCoefficients.push_back(M);
 
-    for (size_t j = 0; j <= constraintRow.size(); ++j) {
+    for (size_t j = 0; j <= constraintRow.size()-1; ++j) {
         objectiveCoefficients[j] += -M * constraintRow[j];
     }
 
     objectiveCoefficients.emplace_back(-M * constraintRHS);
+
+    cout << "\nhi:\n";
+    for (double oc : objectiveCoefficients) {
+        cout << oc << "      ";
+    }
+}
+
+void two_phase_method_phase_one(vector<double> &constraintRow, double constraintRHS,
+                                vector<double> &objectiveCoefficients) {
+    oldObjectiveCoefficients = objectiveCoefficients;
+    oldObjectiveCoefficients.emplace_back(0);
+    oldObjectiveCoefficients.emplace_back(0);
+    vector<double> newObjectiveCoefficients(objectiveCoefficients.size(), 0);
+    newObjectiveCoefficients.push_back(-1);
+
+    for (size_t j = 0; j <= constraintRow.size(); ++j) {
+        newObjectiveCoefficients[j] += constraintRow[j];
+    }
+
+    newObjectiveCoefficients.emplace_back(constraintRHS);
+    objectiveCoefficients = newObjectiveCoefficients;
 }
 
 vector<string> select_basic_variables(vector<string> &variables, const vector<string> &constraintSigns,
@@ -182,6 +207,8 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
                 constraintCoefficients[j].push_back((j == i) ? -1.0 : 0.0);
             }
             objectiveCoefficients.push_back(0.0);
+
+
         }
     }
 
@@ -231,9 +258,11 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
             cout << "Enter '1' for BigM or '2' for Two-Phase method: ";
             cin >> method;
             if (method == 1) {
-                big_m_method(constraintCoefficients[i], constraintRHS[i], objectiveCoefficients, -100);
+                big_m_method(constraintCoefficients[i], constraintRHS[i],
+                             objectiveCoefficients, -100);
             } else if (method == 2) {
-                // Call Two-Phase method
+                two_phase_method_phase_one(constraintCoefficients[i],
+                                           constraintRHS[i], objectiveCoefficients);
             } else {
                 cerr << "Invalid input. Exiting program." << endl;
                 exit(EXIT_FAILURE);
@@ -245,7 +274,61 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
 }
 
 void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vector<string> &basicVariables,
-                    const vector<string> &variables) {
+                     vector<string> &variables);
+
+void two_phase_method_phase_two(vector<string> &basicVariables, vector<vector<double>> &simplexTable, int objectiveType,
+                                 vector<string> &variables) {
+
+    static bool columnRemoved = false;
+    if (!columnRemoved) {
+        variables.pop_back();
+
+        size_t columnIndexToRemove = variables.size();
+
+        for (auto &row: simplexTable) {
+            if (columnIndexToRemove < row.size()) {
+                row.erase(
+                        row.begin() + static_cast<std::vector<double>::iterator::difference_type>(columnIndexToRemove));
+            }
+        }
+        columnRemoved = true;
+    }
+
+    size_t numVariables = variables.size() + 1;
+    for (int i = 0; i <= numVariables; ++i) {
+        simplexTable[0][i] = -oldObjectiveCoefficients[i];
+    }
+
+    for (const string &bv: basicVariables) {
+        bool isValid = true;
+        double multiplier;
+
+        size_t columnIndex = find(variables.begin(), variables.end(), bv) - variables.begin();
+        for (int i = 0; i < simplexTable.size(); ++i) {
+            if (i == 0) {
+                double a = simplexTable[0][columnIndex];
+                if (a != 0) {
+                    isValid = false;
+                    multiplier = a / -1;
+                }
+            }
+        }
+
+        if (!isValid) {
+            for (int y = 0; y <= variables.size(); ++y) {
+                size_t basicVariableIndex = find(basicVariables.begin(), basicVariables.end(), bv) -
+                                            basicVariables.begin() + 1;
+                simplexTable[0][y] += multiplier * simplexTable[basicVariableIndex][y];
+            }
+        }
+    }
+
+    two_phase_flag = false;
+    simplex_method(simplexTable, objectiveType, basicVariables, variables);
+}
+
+void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vector<string> &basicVariables,
+                     vector<string> &variables) {
     size_t numRows = simplexTable.size();
     size_t numCols = simplexTable[0].size();
     int iteration_counter = 1;
@@ -312,10 +395,14 @@ void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vec
 
         // If the solution is optimal, break out of the loop
         if (optimal) {
-            cout << "\n\nhi there2\n";
-            print_simplex(simplexTable, -1, -1, iteration_counter, basicVariables, variables, objectiveType);
+            print_simplex(simplexTable, -1, -1, iteration_counter,
+                          basicVariables, variables, objectiveType);
             break;
         }
+    }
+
+    if (simplexTable[0][numCols] == 0 && two_phase_flag) {
+        two_phase_method_phase_two(basicVariables, simplexTable, objectiveType, variables);
     }
 }
 
