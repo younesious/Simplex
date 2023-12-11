@@ -107,14 +107,6 @@ void enter_simplex_table(vector<vector<double>> &simplexTable, const vector<doub
         simplexTable[0][i] = -objectiveCoefficients[i];
     }
 
-    // simplexTable[0][numVariables] = -600;
-    cout << "\nhehe:\n";
-    for (int i = 0; i < numVariables; ++i) {
-        cout << simplexTable[0][i] << "        ";
-    }
-
-    cout << "\n";
-
     for (size_t i = 1; i <= numConstraints; ++i) {
         for (size_t j = 0; j <= numVariables; ++j) {
             simplexTable[i][j] = constraintCoefficients[i - 1][j];
@@ -166,25 +158,13 @@ void big_m_method(vector<double> &constraintRow, vector<double> &objectiveCoeffi
     objectiveCoefficients.emplace_back(0);
 }
 
-void two_phase_method_phase_one(vector<double> &constraintRow, double constraintRHS,
-                                vector<double> &objectiveCoefficients) {
+void two_phase_method_phase_one(vector<double> &constraintRow, vector<double> &objectiveCoefficients) {
     two_phase_flag = true;
-    oldObjectiveCoefficients = objectiveCoefficients;
-    oldObjectiveCoefficients.emplace_back(0);
-    // oldObjectiveCoefficients.emplace_back(0);
-    vector<double> newObjectiveCoefficients(objectiveCoefficients.size(), 0);
-    newObjectiveCoefficients.push_back(-1);
+
+    objectiveCoefficients.push_back(-1);
 
     for (size_t j = 0; j <= constraintRow.size(); ++j) {
-        newObjectiveCoefficients[j] += constraintRow[j];
-    }
-
-    newObjectiveCoefficients.emplace_back(constraintRHS);
-    objectiveCoefficients = newObjectiveCoefficients;
-
-    cout << "\nman\n";
-    for (double ce: objectiveCoefficients) {
-        cout << ce << "         ";
+        objectiveCoefficients[j] += constraintRow[j];
     }
 }
 
@@ -226,6 +206,8 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
     }
 
     int M = 100;
+    static bool newObjectiveCoefficientsTwoPhaseMethodFlag = true;
+
     for (size_t i = 0; i < constraintCoefficients.size(); ++i) {
         if (constraintSigns[i] == "<=") {
             continue; // Skip the entire loop for this constraint
@@ -268,12 +250,21 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
                 constraintCoefficients[j].push_back((j == i) ? 1.0 : 0.0);
             }
 
+            sumConstraintRHS += constraintRHS[i];
             if (method == 1) {
                 big_m_method(constraintCoefficients[i], objectiveCoefficients, -M);
-                sumConstraintRHS += constraintRHS[i];
             } else if (method == 2) {
-                two_phase_method_phase_one(constraintCoefficients[i],
-                                           constraintRHS[i], objectiveCoefficients);
+                if (newObjectiveCoefficientsTwoPhaseMethodFlag) {
+                    oldObjectiveCoefficients = objectiveCoefficients;
+                    oldObjectiveCoefficients.emplace_back(0);
+
+                    for (double &ocf: objectiveCoefficients) {
+                        ocf = 0;
+                    }
+                    newObjectiveCoefficientsTwoPhaseMethodFlag = false;
+                }
+                two_phase_method_phase_one(constraintCoefficients[i], objectiveCoefficients);
+
             } else {
                 cerr << "Invalid input. Exiting program." << endl;
                 exit(EXIT_FAILURE);
@@ -283,6 +274,8 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
 
     if (method == 1) {
         objectiveCoefficients.emplace_back(sumConstraintRHS * M);
+    } else if (method == 2) {
+        objectiveCoefficients.emplace_back(sumConstraintRHS);
     }
 
     return basicVariables;
@@ -293,7 +286,6 @@ void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vec
 
 void two_phase_method_phase_two(vector<string> &basicVariables, vector<vector<double>> &simplexTable, int objectiveType,
                                 vector<string> &variables) {
-
     static bool columnRemoved = false;
     if (!columnRemoved) {
         variables.pop_back();
@@ -306,6 +298,7 @@ void two_phase_method_phase_two(vector<string> &basicVariables, vector<vector<do
                         row.begin() + static_cast<std::vector<double>::iterator::difference_type>(columnIndexToRemove));
             }
         }
+
         columnRemoved = true;
     }
 
