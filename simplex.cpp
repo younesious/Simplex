@@ -103,7 +103,7 @@ void enter_simplex_table(vector<vector<double>> &simplexTable, const vector<doub
 
     simplexTable.resize(numRows, vector<double>(numCols - 1, 0.0));
 
-    for (int i = 0; i <= numVariables; ++i) {
+    for (int i = 0; i < numVariables; ++i) {
         simplexTable[0][i] = -objectiveCoefficients[i];
     }
 
@@ -175,10 +175,7 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
     size_t nextVariableIndex = variables.size() + 1;
     int method;
     double sumConstraintRHS = 0.0;
-
-    cout << "Enter '1' for BigM or '2' for Two-Phase method: ";
-    cin >> method;
-
+    static bool askUserMethodFlag = true;
 
     // Loop over constraints to add x(i+1) to variables when constraintSigns is <= or >=
     for (size_t i = 0; i < constraintCoefficients.size(); ++i) {
@@ -248,6 +245,12 @@ vector<string> select_basic_variables(vector<string> &variables, const vector<st
             basicVariables.push_back(variables.back());
             for (size_t j = 0; j < constraintCoefficients.size(); ++j) {
                 constraintCoefficients[j].push_back((j == i) ? 1.0 : 0.0);
+            }
+
+            if (askUserMethodFlag) {
+                cout << "Enter '1' for BigM or '2' for Two-Phase method: ";
+                cin >> method;
+                askUserMethodFlag = false;
             }
 
             sumConstraintRHS += constraintRHS[i];
@@ -354,18 +357,47 @@ void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vec
         // Step 4: Select the output variable
         int outputRow = -1;
         double minRatio = -1.0;
+        vector<int> degenerateCandidates; // Keep track of candidates for degeneracy
+
         for (int i = 1; i < numRows; ++i) {
             if (simplexTable[i][inputColumn] > 0) {
                 double ratio = simplexTable[i][numCols - 1] / simplexTable[i][inputColumn];
                 if (outputRow == -1 || ratio < minRatio) {
                     outputRow = i;
                     minRatio = ratio;
+                    // Track candidates for degeneracy
+                    degenerateCandidates.clear();
+                    degenerateCandidates.push_back(i);
+                } else if (ratio == minRatio) {
+                    // Multiple candidates for degeneracy
+                    degenerateCandidates.push_back(i);
                 }
             }
         }
 
-        // If no output row is found, the solution is optimal
+        // Handle degeneracy by using Bland's rule (choose the lowest-indexed variable)
+        if (degenerateCandidates.size() > 1) {
+            outputRow = *min_element(degenerateCandidates.begin(), degenerateCandidates.end());
+        }
+
+        // If no output row is found, check for unbounded solution
         if (outputRow == -1) {
+            // Check for unbounded solution
+            bool allNonPositive = true;
+            for (int i = 1; i < numRows; ++i) {
+                if (simplexTable[i][inputColumn] > 0) {
+                    allNonPositive = false;
+                    break;
+                }
+            }
+
+            if (allNonPositive) {
+                // Handle unbounded solution (print a message, etc.)
+                cout << "The problem is unbounded." << endl;
+                break;
+            }
+
+            // If no unbounded column is found, the solution is optimal
             break;
         }
 
@@ -407,6 +439,19 @@ void simplex_method(vector<vector<double>> &simplexTable, int objectiveType, vec
                           basicVariables, variables, objectiveType);
             break;
         }
+    }
+
+    bool infeasible = false;
+    for (int i = 1; i < numRows; ++i) {
+        if (simplexTable[i][numCols - 1] < 0) {
+            infeasible = true;
+            break;
+        }
+    }
+
+    if (infeasible) {
+        // Handle infeasible solution (print a message, etc.)
+        cout << "The problem is infeasible." << endl;
     }
 
     if (simplexTable[0][numCols] == 0 && two_phase_flag) {
