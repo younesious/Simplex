@@ -95,7 +95,8 @@ void print_problem(int objectiveType, const vector<double> &objectiveCoefficient
     cout << endl;
 }
 
-void convert_to_conventional_model(vector<vector<double>> &constraintCoefficients, vector<string> &constraintSigns,
+void convert_to_conventional_model(vector<vector<double>> &constraintCoefficients,
+                                   vector<double> &objectiveCoefficients, vector<string> &constraintSigns,
                                    vector<double> &constraintRHS, vector<string> &variableSigns,
                                    vector<string> &variables) {
     for (size_t i = 0; i < constraintSigns.size(); ++i) {
@@ -125,14 +126,30 @@ void convert_to_conventional_model(vector<vector<double>> &constraintCoefficient
             constraintSigns.emplace_back(">=");
             constraintRHS.push_back(newRHS);
         }
+    }
+    for (size_t j = 0; j < variableSigns.size(); ++j) {
+        if (variableSigns[j] == "<=") { // xi' = -xi, xi' >= 0
+            variables[j] = variables[j] + "'";
+            variableSigns[j] = ">=";
 
-        for (size_t j = 0; j < constraintCoefficients[i].size(); ++j) {
-            if (variableSigns[j] == "<=") {
-                variables[j] = "-" + variables[j] + "'";
-                variableSigns[j] = ">=";
-            } else if (variableSigns[j] == "R") {
-                variables[j] = variables[j] + "' - " + variables[j] + "''";
-                variableSigns[j] = ">=";
+            for (size_t i = 0; i < constraintSigns.size(); ++i) {
+                for (double &c: constraintCoefficients[i]) {
+                    c *= -1;
+                }
+            }
+            objectiveCoefficients[j] *= -1;
+        } else if (variableSigns[j] == "R") {
+            variableSigns[j] = ">=";
+            variables[j] += "'";
+
+            string newVar = variables[j] + "'";
+            variables.push_back(newVar);
+            variableSigns.emplace_back(">=");
+            objectiveCoefficients.push_back(objectiveCoefficients[j] * -1);
+
+            for (auto &row: constraintCoefficients) {
+                row[j] *= -1;
+                row.push_back(row[j] * -1);
             }
         }
     }
@@ -203,7 +220,7 @@ int main() {
                   constraintRHS, variableSigns, variables);
 
     // Convert the primal LP to conventional form
-    convert_to_conventional_model(constraintCoefficients, constraintSigns, constraintRHS,
+    convert_to_conventional_model(constraintCoefficients, objectiveCoefficients, constraintSigns, constraintRHS,
                                   variableSigns, variables);
 
     // Print the modified problem
