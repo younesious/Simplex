@@ -34,15 +34,16 @@ Primal LP Solver (simplex.cpp)
 
     Compile the simplex.cpp file using a C++ compiler:
 
-    bash
 
+```bash
 g++ simplex.cpp -o simplex
+```
 
 Run the compiled executable:
 
-bash
-
-    ./simplex
+```bash
+./simplex
+```
 
     Follow the on-screen prompts to input the details of the primal LP problem.
 
@@ -50,15 +51,15 @@ Dual LP Generator and Solver (dual.cpp)
 
     Compile the dual.cpp file using a C++ compiler:
 
-    bash
-
+```bash
 g++ dual.cpp -o dual
+```
 
 Run the compiled executable:
 
-bash
-
-    ./dual
+```bash
+./dual
+```
 
     Follow the on-screen prompts to input the details of the primal LP problem.
 
