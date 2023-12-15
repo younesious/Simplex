@@ -1,74 +1,79 @@
-Simlex
+# Sipmlex
 
-Simlex is a C++ implementation of the Simplex method for solving linear programming (LP) problems. The repository includes two files: simplex.cpp for solving primal LP problems and dual.cpp for generating the dual LP problem form.
-Table of Contents
+Simlex is a C++ implementation of the Simplex method for solving linear programming (LP) problems. The repository includes two files: `simplex.cpp` for solving primal LP problems and `dual.cpp` for generating the dual LP problem.
 
-    Introduction
-    Features
-    Usage
-        Primal LP Solver (simplex.cpp)
-        Dual LP Generator and Solver (dual.cpp)
-    Installation
-    Contributing
-    License
+## Table of Contents
 
-Introduction
++ Introduction
++ Features
++ Usage
+    + Primal LP Solver (simplex.cpp)
+    + Dual LP Generator and Solver (dual.cpp)
++ Installation
++ Contributing
++ License
+   
+## Introduction
 
-The Simplex method is an iterative optimization algorithm for solving linear programming problems. The primal LP solver (simplex.cpp) takes user input for a linear programming problem and uses the Simplex method to find the optimal solution. The dual LP generator (dual.cpp) automatically generate the dual LP problem corresponding to the given primal LP problem.
-Features
-Primal LP Solver (simplex.cpp)
+The Simplex method is an iterative optimization algorithm for solving linear programming problems. The primal LP solver `simplex.cpp` takes user input for a linear programming problem and uses the Simplex method to find the optimal solution. The dual LP generator `dual.cpp` automatically generate the dual LP problem corresponding to the given primal LP problem.
 
-    Solves linear programming problems (maximization or minimization) using the Simplex method.
-    Handles constraints of the form <=, >=, and =.
-    Allows the user to input coefficients for the objective function, constraint coefficients, signs, and RHS values.
-    Supports both Big M method and Two-Phase method for solving LP problems.
+## Features
 
-Dual LP Generator and Solver (dual.cpp)
+### Primal LP Solver (`simplex.cpp`)
 
-    Automatically generates the dual LP problem for a given primal LP problem.
-    This file accepts primal LP problem input from user handles problems with >=, <=, and = constraints, handles free variables marked "R".
-    Converts the primal LP problem to conventional form before generating the dual.
++ Solves linear programming problems (maximization or minimization) using the Simplex method.
++ Handles constraints of the form <=, >=, and =.
++ Allows the user to input coefficients for the objective function, constraint coefficients, signs, and RHS values.
++ Supports both Big M method and Two-Phase method for solving LP problems.
 
-Usage
-Primal LP Solver (simplex.cpp)
+### Dual LP Generator (`dual.cpp`)
 
-    Compile the simplex.cpp file using a C++ compiler:
++ Automatically generates the dual LP problem for a given primal LP problem.
++ This file accepts primal LP problem input from user handles problems with >=, <=, and =        constraints, handles free variables marked "R".
++ Converts the primal LP problem to conventional form before generating the dual.
 
+## Usage
+
+### Primal LP Solver (`simplex.cpp`)
+
+1. Compile the simplex.cpp file using a C++ compiler:
 
 ```bash
 g++ simplex.cpp -o simplex
 ```
 
-Run the compiled executable:
+2. Run the compiled executable:
 
 ```bash
 ./simplex
 ```
 
-    Follow the on-screen prompts to input the details of the primal LP problem.
+3. Follow the on-screen prompts to input the details of the primal LP problem.
 
-Dual LP Generator and Solver (dual.cpp)
+### Dual LP Generator and Solver (`dual.cpp`)
 
-    Compile the dual.cpp file using a C++ compiler:
+1. Compile the dual.cpp file using a C++ compiler:
 
 ```bash
 g++ dual.cpp -o dual
 ```
 
-Run the compiled executable:
+2. Run the compiled executable:
 
 ```bash
 ./dual
 ```
 
-    Follow the on-screen prompts to input the details of the primal LP problem.
+3. Follow the on-screen prompts to input the details of the primal LP problem.
 
-Installation
+## Installation
 
 No installation is required. Simply compile the C++ files using a C++ compiler.
-Contributing
+
+## Contributing
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
-License
+
+## License
 
 This project is licensed under the MIT License.
