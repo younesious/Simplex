@@ -4,10 +4,10 @@
 
 using namespace std;
 
-vector<string> initialize_variables(size_t numVars) {
+vector<string> initialize_variables(size_t numVars, char varName) {
     vector<string> variables(numVars, "");
     for (size_t i = 0; i < variables.size(); ++i) {
-        variables[i] = "x" + to_string(i + 1);
+        variables[i] = varName + to_string(i + 1);
     }
     return variables;
 }
@@ -21,7 +21,7 @@ void get_input(int &objectiveType, int &numVariables, int &numConstraints,
 
     cout << "Enter the number of variables: ";
     cin >> numVariables;
-    variables = initialize_variables(numVariables);
+    variables = initialize_variables(numVariables, 'x');
 
     cout << "Enter the signs for the variables ('>=', '<=', 'R'):\n";
     for (int i = 0; i < numVariables; ++i) {
@@ -32,15 +32,15 @@ void get_input(int &objectiveType, int &numVariables, int &numConstraints,
         variableSigns.emplace_back(temp);
     }
 
-    cout << "Enter the number of constraints: ";
-    cin >> numConstraints;
-
     cout << "Enter coefficients for the objective function:\n";
     objectiveCoefficients.resize(numVariables);
     for (int i = 0; i < numVariables; ++i) {
         cout << "Coefficient for variable x" << i + 1 << ": ";
         cin >> objectiveCoefficients[i];
     }
+
+    cout << "Enter the number of constraints: ";
+    cin >> numConstraints;
 
     cout << "Enter coefficients, signs, and RHS for each constraint:\n";
     constraintCoefficients.resize(numConstraints, vector<double>(numVariables));
@@ -127,10 +127,11 @@ void convert_to_conventional_model(vector<vector<double>> &constraintCoefficient
             constraintRHS.push_back(newRHS);
         }
     }
+
     for (size_t j = 0; j < variableSigns.size(); ++j) {
         if (variableSigns[j] == "<=") { // xi' = -xi, xi' >= 0
             variables[j] = variables[j] + "'";
-            variableSigns[j] = ">=";
+            variableSigns[j] = ">= 0";
 
             for (size_t i = 0; i < constraintSigns.size(); ++i) {
                 for (double &c: constraintCoefficients[i]) {
@@ -139,12 +140,12 @@ void convert_to_conventional_model(vector<vector<double>> &constraintCoefficient
             }
             objectiveCoefficients[j] *= -1;
         } else if (variableSigns[j] == "R") {
-            variableSigns[j] = ">=";
+            variableSigns[j] = ">= 0";
             variables[j] += "'";
 
             string newVar = variables[j] + "'";
             variables.push_back(newVar);
-            variableSigns.emplace_back(">=");
+            variableSigns.emplace_back(">= 0");
             objectiveCoefficients.push_back(objectiveCoefficients[j] * -1);
 
             for (auto &row: constraintCoefficients) {
@@ -155,27 +156,26 @@ void convert_to_conventional_model(vector<vector<double>> &constraintCoefficient
     }
 }
 
-
 void dual(int &objectiveType, vector<double> &objectiveCoefficients,
           vector<vector<double>> &constraintCoefficients, vector<string> &constraintSigns,
-          vector<double> &constraintRHS, vector<string> &variableSigns, const vector<string> &variables) {
+          vector<double> &constraintRHS, vector<string> &variableSigns, vector<string> &variables) {
     objectiveType = (objectiveType == 1) ? 2 : 1;
 
-    size_t dualNumVariables = constraintCoefficients.size();
-    size_t dualNumConstraints = variables.size();
-
+    size_t dualNumVariables = variables.size();
+    size_t dualNumConstraints = constraintCoefficients.size();
 
     vector<double> dualObjectiveCoefficients(dualNumConstraints, 0.0);
-    vector<vector<double>> dualConstraintCoefficients(dualNumConstraints, vector<double>(dualNumVariables, 0.0));
+    vector<vector<double>> dualConstraintCoefficients(dualNumVariables, vector<double>(dualNumConstraints, 0.0));
     vector<string> dualConstraintSigns(dualNumConstraints);
     vector<double> dualConstraintRHS(dualNumConstraints, 0.0);
+    variables = initialize_variables(dualNumConstraints, 'y');
 
     for (size_t i = 0; i < dualNumConstraints; ++i) {
         dualObjectiveCoefficients[i] = constraintRHS[i];
     }
 
-    for (size_t i = 0; i < dualNumVariables; ++i) {
-        for (size_t j = 0; j < dualNumConstraints; ++j) {
+    for (size_t i = 0; i < dualNumConstraints; ++i) {
+        for (size_t j = 0; j < dualNumVariables; ++j) {
             dualConstraintCoefficients[j][i] = constraintCoefficients[i][j];
         }
     }
@@ -225,9 +225,8 @@ int main() {
 
     // Print the modified problem
     cout << "\nModified LP after conversion to conventional form:\n";
-    print_problem(objectiveType, objectiveCoefficients,
-                  constraintCoefficients, constraintSigns,
-                  constraintRHS, variableSigns, variables);
+    print_problem(objectiveType, objectiveCoefficients, constraintCoefficients,
+                  constraintSigns, constraintRHS, variableSigns, variables);
 
     dual(objectiveType, objectiveCoefficients, constraintCoefficients,
          constraintSigns, constraintRHS, variableSigns, variables);
