@@ -72,7 +72,7 @@ No installation is required. Simply compile the C++ files using a C++ compiler.
 
 ## Contributing
 
-Contributions are welcome! Feel free to open issues or submit pull requests.
+Contributions are welcome! Feel free to open issues or submit pull requests. For example, you can write some parts with a cleaner struct, or some functions have become too long, they can be shortened to help the reusability of the program, and any safe refactor for achieve clean code. And finally, if you develop the bigM part, it will be great for more than two variables.
 
 ## License
 
